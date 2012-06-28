@@ -8,5 +8,7 @@ Working:
   Auto registration (new user no verification by caller ID).
 
 To do:
-  Authentication
-  Registration verification (by SMS?)
+  1. Authentication
+  2. Registration verification (by SMS?)
+
+Note: This code is originally written by leoburd, i am contributing to it. 
