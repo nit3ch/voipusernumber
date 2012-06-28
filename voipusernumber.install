@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * @file
+ *   Install file for voip user.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function voipusernumber_schema() {
+  $schema = array();
+  $schema['voipusernumber_numbers'] = array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'number_prefix' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'phone' => array(
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'status' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('phone'),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function voipusernumber_install() {
+  drupal_install_schema('voipusernumber');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function voipusernumber_uninstall() {
+  drupal_uninstall_schema('voipusernumber');
+}
+
+/**
+ * Implements hook_enable().
+ */
+function voipusernumber_enable() {
+  module_invoke('autoload', 'flush_caches');
+}
