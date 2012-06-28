@@ -135,13 +135,12 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
  * @see voipusernumber_settings_add_form_validate().
  */
 function voipusernumber_settings_add_form_submit($form, &$form_state) {
+  if (_voipusernumber_auth_script() != FALSE) {
   $voipnumber = new VoipUserNumber($form_state['values']['number'], $form_state['values']['uid']);
   drupal_write_record('voipusernumber_numbers', $voipnumber);
   $account->voipnumber[$voipnumber->getNumber()] = $voipnumber;
   module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-  if (_voipusernumber_auth_script() != FALSE) {
-    
-  } 
+    } 
 }
 
 /**
