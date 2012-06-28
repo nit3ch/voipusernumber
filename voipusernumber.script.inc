@@ -81,7 +81,7 @@ function _voipusernumber_auth_script() {
   $script = new VoipScript('voipusernumber_auth');
   $script-> addLabel('start');
   $call = new VoipCall();
-  $phone_number = '+917827620167';
+  $phone_number = '6174108647';
   $call-> setDestNumber($phone_number);
   $script_name = "voipusernumber_ask_pin";
   $script = VoipScript::loadScript($script_name);
@@ -89,6 +89,7 @@ function _voipusernumber_auth_script() {
   $result = voip_dial($call);
   if ($result) {
      watchdog('voipusernumber', "call successfully queued for $phone_number");
+     return TRUE;
   }
   else {
      $msg = $call->getErrorMessage();
@@ -104,4 +105,5 @@ function _voipusernumber_ask_pin() {
     $script-> addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
     $script->addSay(v('you eneterd $pin'));
+    return $script;
 }
