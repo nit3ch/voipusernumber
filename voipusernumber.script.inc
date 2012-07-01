@@ -81,7 +81,7 @@ function _voipusernumber_auth_script() {
   $script = new VoipScript('voipusernumber_auth');
   $script-> addLabel('start');
   $call = new VoipCall();
-  $phone_number = '6174108647';
+  $phone_number = 'sip:nit3ch@ekiga.net';
   $call-> setDestNumber($phone_number);
   $script_name = "voipusernumber_ask_pin";
   $script = VoipScript::loadScript($script_name);
@@ -104,6 +104,7 @@ function _voipusernumber_ask_pin() {
     $prompt = 'Please enter your 4 digit Pin, and press pound key to confirm.';
     $script-> addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
-    $script->addSay(v('you eneterd $pin'));
+    $script->addSay(v('you eneterd %pin')); 
+    global $pin;
     return $script;
 }

@@ -100,7 +100,6 @@ function voipusernumber_settings_add_form(&$form_state, $account) {
     '#type' => 'textfield',
     '#title' => t('PIN'),
     '#description'=> t('Verify this pin over phone'),
-    '#default_value' => '', // do we ever want one
     '#required' => TRUE,
   );
   $form['add']['submit'] = array(
@@ -136,7 +135,9 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
  */
 function voipusernumber_settings_add_form_submit($form, &$form_state) {
   module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-  if (_voipusernumber_auth_script() != FALSE) {
+  dsm($pin);
+  dsm($form_state['values']['pin']);
+  if (_voipusernumber_auth_script() != FALSE && sleep(60) && $form_state['values']['pin'] == $pin)    {
   $voipnumber = new VoipUserNumber($form_state['values']['number'], $form_state['values']['uid']);
   drupal_write_record('voipusernumber_numbers', $voipnumber);
   $account->voipnumber[$voipnumber->getNumber()] = $voipnumber;
