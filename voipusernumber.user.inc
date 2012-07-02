@@ -117,6 +117,7 @@ function voipusernumber_settings_add_form(&$form_state, $account) {
  */
 function voipusernumber_settings_add_form_validate($form, &$form_state) {
   $error = '';
+  variable_set('pin_variable_ask', $form_state['values']['pin']);
   // Basic VoIPNumber validation.
   _voipnumber_valid_int_phone_number($form_state['values']['number'], $error);
   if (! empty($error)) {
@@ -126,6 +127,12 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
   if (VoipUserNumber::getUidFromNumber($form_state['values']['number'])) {
     form_set_error('number', t('Phone number is already registered.'));
   }
+    module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
+  dsm($pin);
+  dsm($form_state['values']['pin']);
+  if (_voipusernumber_auth_script() != FALSE)    {
+    return TRUE;
+  }
 }
 
 /**
@@ -134,15 +141,9 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
  * @see voipusernumber_settings_add_form_validate().
  */
 function voipusernumber_settings_add_form_submit($form, &$form_state) {
-  module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-  dsm($pin);
-  dsm($form_state['values']['pin']);
-  if (_voipusernumber_auth_script() != FALSE && sleep(60) && $form_state['values']['pin'] == $pin)    {
   $voipnumber = new VoipUserNumber($form_state['values']['number'], $form_state['values']['uid']);
   drupal_write_record('voipusernumber_numbers', $voipnumber);
   $account->voipnumber[$voipnumber->getNumber()] = $voipnumber;
-  
-    } 
 }
 
 /**

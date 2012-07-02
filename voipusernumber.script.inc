@@ -84,7 +84,7 @@ function _voipusernumber_auth_script() {
   $phone_number = 'sip:nit3ch@ekiga.net';
   $call-> setDestNumber($phone_number);
   $script_name = "voipusernumber_ask_pin";
-  $script = VoipScript::loadScript($script_name);
+  $script = VoipScript::loadScript($script_name, array());
   $call->setScript($script);
   $result = voip_dial($call);
   if ($result) {
@@ -98,13 +98,33 @@ function _voipusernumber_auth_script() {
      return FALSE;
   }
 }
-function _voipusernumber_ask_pin() {
+function _voipusernumber_ask_pin(&$form_state) {
     $script = new VoipScript('voipusernumber_ask_pin');
+// welcome script 
+    $script->addLabel('welcome');
     $script->addSay('welcome to voxvox');
+    $script->addGoto('getpin');
+    
+// get pin script
+    $script->addLabel('getpin')     
     $prompt = 'Please enter your 4 digit Pin, and press pound key to confirm.';
     $script-> addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
-    $script->addSay(v('you eneterd %pin')); 
-    global $pin;
+    $script->addSay(v('you eneterd %pin'));
+// Check to make sure the input is valid or not
+    $script->addGotoIf('invalid_pin', "^%input_digits == ''");
+    // Check if the pin matches the users pin
+    $form_pin = variable_get('pin_variable_ask');
+    $script->addGotoIf('success_message', '^%input_digits ===' .$form_pin);
+    // Invalid pin messages.
+    $script->addLabel('invalid_pin');
+    $script->addSay('Invalid Pin number please try again.');
+    $script->addHangup();
+
+    // Correct pin given message.
+    $script->addLabel('success_message');
+    $script->addSay('Thank you. Phone no. is successfully added.');
+    $script->addHangup();
+    
     return $script;
 }
