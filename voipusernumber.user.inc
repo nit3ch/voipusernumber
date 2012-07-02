@@ -118,6 +118,8 @@ function voipusernumber_settings_add_form(&$form_state, $account) {
 function voipusernumber_settings_add_form_validate($form, &$form_state) {
   $error = '';
   variable_set('pin_variable_ask', $form_state['values']['pin']);
+  $default = '';
+  $pin= variable_get('pin_variable_ask',$dafault);
   // Basic VoIPNumber validation.
   _voipnumber_valid_int_phone_number($form_state['values']['number'], $error);
   if (! empty($error)) {

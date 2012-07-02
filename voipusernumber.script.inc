@@ -84,9 +84,18 @@ function _voipusernumber_auth_script() {
   $phone_number = 'sip:nit3ch@ekiga.net';
   $call-> setDestNumber($phone_number);
   $script_name = "voipusernumber_ask_pin";
-  $script = VoipScript::loadScript($script_name, array());
+  $script = VoipScript::loadScript($script_name);
   $call->setScript($script);
   $result = voip_dial($call);
+while(!$call->isHangup()) {
+    sleep(2); 
+    $call = VoipCall::load($call->getCid());
+// Check Maximum execution time.
+    if (time() - $start_time > 60) {
+      watchdog('multifactor', 'Reached maximum execution time. Status: ' . var_export($call->getCallStatus(), TRUE));
+      break;
+    }
+  }
   if ($result) {
      watchdog('voipusernumber', "call successfully queued for $phone_number");
      return TRUE;
@@ -106,7 +115,7 @@ function _voipusernumber_ask_pin(&$form_state) {
     $script->addGoto('getpin');
     
 // get pin script
-    $script->addLabel('getpin')     
+    $script->addLabel('getpin');    
     $prompt = 'Please enter your 4 digit Pin, and press pound key to confirm.';
     $script-> addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
@@ -114,12 +123,13 @@ function _voipusernumber_ask_pin(&$form_state) {
 // Check to make sure the input is valid or not
     $script->addGotoIf('invalid_pin', "^%input_digits == ''");
     // Check if the pin matches the users pin
-    $form_pin = variable_get('pin_variable_ask');
-    $script->addGotoIf('success_message', '^%input_digits ===' .$form_pin);
+    $dafault ='';
+    $form_pin = variable_get('pin_variable_ask',$dafault);
+    $script->addGotoIf('success_message', '^%input_digits' == $form_pin);
     // Invalid pin messages.
     $script->addLabel('invalid_pin');
     $script->addSay('Invalid Pin number please try again.');
-    $script->addHangup();
+    $script->addGoto('getpin');
 
     // Correct pin given message.
     $script->addLabel('success_message');
