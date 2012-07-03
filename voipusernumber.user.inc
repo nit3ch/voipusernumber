@@ -30,7 +30,6 @@ function voipusernumber_settings_numbers_form(&$form_state, $account) {
   // This would/should be loaded onto $account, but allowing for
   // use of form without user_load:
   $numbers = VoipUserNumber::getNumbersFromUid($account->uid);
-
   foreach ($numbers as $number) {
     $row = array();
     $row['number'] = array(
@@ -129,12 +128,15 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
   if (VoipUserNumber::getUidFromNumber($form_state['values']['number'])) {
     form_set_error('number', t('Phone number is already registered.'));
   }
-    module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-  dsm($pin);
-  dsm($form_state['values']['pin']);
+  module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
   if (_voipusernumber_auth_script() != FALSE)    {
     return TRUE;
   }
+  $no_to_be_added = $form_state['values']['number'];
+  $assoc_phone = db_result(db_query("select count(*) as nop From voipusernumber_numbers where phone=%d",$no_to_be_added));
+    if ($assoc_phone = 0){
+    echo "hello";
+    }
 }
 
 /**
@@ -193,3 +195,6 @@ function theme_voipusernumber_settings_page($content) {
   $output .= $content['numbers'];
   return $output;
 }
+// user merge implementation 
+function voipusernumber_user_merge() {
+  }
