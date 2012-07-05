@@ -86,35 +86,105 @@ function voipusernumber_settings_numbers_form(&$form_state, $account) {
 function voipusernumber_settings_add_form(&$form_state, $account) {
   $form = array();
   $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
-
-  // would be good to have a standard (outside CCK implementation of voipnumber 
+  // would be good to have a standard (outside CCK implementation of voipnumber
   // elements?
+  if (!empty($form_state['storage']['step'])) {
+    $function = $form_state['storage']['step'];
+    return $function($form_state);
+  }
+  else {
+    return _add_number();
+  }
+}
+function _add_number() {
   $form['add']['number'] = array(
     '#type' => 'textfield',
     '#title' => t('Phone number'),
-    '#default_value' => '', // do we ever want one
     '#required' => TRUE,
   );
+  $form['continue'] = array(
+    '#type' => 'submit',
+    '#value' => 'Continue',
+  );
+  $form['this_step'] = array(
+    '#type' => 'value',
+    '#value' => 'start',
+  );
+  $form['step_next'] = array(
+    '#type' => 'value',
+    '#value' => '_get_pin',
+  );
+  $form['#validate'] = '_add_number_validate';
+  return $form;
+}
+
+function _get_pin() {
   $form['add']['pin'] = array(
     '#type' => 'textfield',
     '#title' => t('PIN'),
     '#description'=> t('Verify this pin over phone'),
     '#required' => TRUE,
   );
-  $form['add']['submit'] = array(
+  $form['continue'] = array(
     '#type' => 'submit',
-    '#value' => t('Add'),
+    '#value' => 'Verify',
   );
+  $form['this_step'] = array(
+    '#type' => 'value',
+    '#value' => 'pin',
+  );
+  $form['#validate'] = '_get_pin_validate';
 
+  /**
+   $form['add']['apin'] = array(
+   '#type' => 'submit',
+   '#value' => t('verify'),
+   '#description' => t("Verify code."),
+   '#weight' => 1,
+   //    '#submit' => array('poll_more_choices_submit'),
+   '#ahah' => array(
+   'event' => 'click',
+   'path' => 'voipusernumber/js',
+   'wrapper' => 'add-wrapper',
+   'method' => 'replace',
+   'effect' => 'fade',
+   ),
+   );
+
+   $form['add']['submit'] = array(
+   '#type' => 'submit',
+   '#value' => t('Add'),
+   );
+   */
   return $form;
 }
+
+
+function _add_number_validate($form, &$form_state) {
+  print dsm($form_state);
+}
+function _get_pin_validate($form, &$form_state) {
+  print dsm($form_state);
+  }
+/**
+ * callback function for voipusernumber/js
+ * The return HTML will be outputted by AHAH
+
+ function voipusernumber_js() {
+ //module_load_include('inc', 'voipusernumber', 'voipusernumber.user');
+ $output = 'Hello Drupal World';
+ //print_r(drupal_json(array('status' => TRUE, 'data' => $output)));exit;
+ drupal_json(array('status' => TRUE, 'data' => $output));
+ }
+ */
 
 /**
  * Form validation handler for voipusernumber_settings_add_form().
  *
  * @see voipusernumber_settings_add_form_submit().
- */
+ *
 function voipusernumber_settings_add_form_validate($form, &$form_state) {
+  print dsm($form_state);
   $error = '';
   variable_set('pin_variable_ask', $form_state['values']['pin']);
   $default = '';
@@ -134,17 +204,38 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
   }
   $no_to_be_added = $form_state['values']['number'];
   $assoc_phone = db_result(db_query("select count(*) as nop From voipusernumber_numbers where phone=%d",$no_to_be_added));
-    if ($assoc_phone = 0){
+  if ($assoc_phone = 0){
     echo "hello";
-    }
+  }
 }
-
+*/
 /**
  * Form submission handler for voipusernumber_settings_add_form().
  *
  * @see voipusernumber_settings_add_form_validate().
  */
 function voipusernumber_settings_add_form_submit($form, &$form_state) {
+  print dsm($form_state);
+  if (empty($form_state['storage'])) {
+    $form_state['storage'] = array();
+    $form_state['storage']['values'] = array();
+  }
+  // Store submitted form values
+  $this_step = $form_state['values']['this_step'];
+  $form_state['storage']['values'][$this_step] = $form_state['values'];
+
+
+  // Set up next step.
+
+
+  if (!empty($form_state['values']['step_next'])) {
+    $form_state['storage']['step'] = $form_state['values']['step_next'];
+  }
+  else {
+    // Form complete!
+    drupal_set_message(t('Complete.'));
+  }
+
   $voipnumber = new VoipUserNumber($form_state['values']['number'], $form_state['values']['uid']);
   drupal_write_record('voipusernumber_numbers', $voipnumber);
   $account->voipnumber[$voipnumber->getNumber()] = $voipnumber;
@@ -162,12 +253,12 @@ function voipusernumber_settings_delete_form(&$form_state, $account, $number) {
   $form['number'] = array('#type' => 'value', '#value' => $number);
 
   return confirm_form(
-    $form,
-    t('Are you sure you want to delete phone number %number?', array('%number' => $number)),
-    isset($_GET['destination']) ? $_GET['destination'] : 'user/' . $account->uid . '/edit/voipnumber',
-    NULL,
-    t('Delete'),
-    t('Cancel')
+  $form,
+  t('Are you sure you want to delete phone number %number?', array('%number' => $number)),
+  isset($_GET['destination']) ? $_GET['destination'] : 'user/' . $account->uid . '/edit/voipnumber',
+  NULL,
+  t('Delete'),
+  t('Cancel')
   );
 }
 
@@ -195,6 +286,6 @@ function theme_voipusernumber_settings_page($content) {
   $output .= $content['numbers'];
   return $output;
 }
-// user merge implementation 
+// user merge implementation
 function voipusernumber_user_merge() {
-  }
+}
