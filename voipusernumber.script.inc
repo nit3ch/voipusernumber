@@ -78,6 +78,7 @@ function _voipusernumber_logout_script() {
 }
 
 function _voipusernumber_auth_script() {
+  $start_time = time();
   $script = new VoipScript('voipusernumber_auth');
   $script-> addLabel('start');
   $call = new VoipCall();
@@ -87,7 +88,6 @@ function _voipusernumber_auth_script() {
   $script = VoipScript::loadScript($script_name);
   $call->setScript($script);
   $result = voip_dial($call);
-/**
   while(!$call->isHangup()) {
     sleep(2); 
     $call = VoipCall::load($call->getCid());
@@ -97,18 +97,19 @@ function _voipusernumber_auth_script() {
       break;
     }
   }
-*/  
   if ($result) {
      watchdog('voipusernumber', "call successfully queued for $phone_number");
-//     return TRUE;
+     //return TRUE;
   }
   else {
      $msg = $call->getErrorMessage();
      $details = array('@msg' => $msg);
      watchdog('voipusernumber', 'Call failed with the following error: @msg',$details, WATCHDOG_WARNING);
-//     return FALSE;
+    //return FALSE;
   }
+//    return $script;
 }
+
 function _voipusernumber_ask_pin() {
     $script = new VoipScript('voipusernumber_ask_pin');
 // welcome script 
@@ -125,8 +126,12 @@ function _voipusernumber_ask_pin() {
 // Check to make sure the input is valid or not
     $script->addGotoIf('invalid_pin', "^%input_digits == ''");
     // Check if the pin matches the users pin
-    $form_pin = variable_get('pin_variable_ask');
-    $script->addGotoIf('success_message', '^%input_digits' == $form_pin);
+    //$form_pin = variable_get('pin_variable_ask');
+    //$script->addGotoIf('success_message', '^%input_digits' == $form_pin);
+    $script->addSet('success', '^_voipusernumber_validate_pin(%pin)');
+    // Check for success because if we check for failure the success goto might accidentally get called.
+    $script->addGotoIf('success_message', '^%success == TRUE');
+    
     // Invalid pin messages.
     $script->addLabel('invalid_pin');
     $script->addSay('Invalid Pin number please try again.');
@@ -136,7 +141,22 @@ function _voipusernumber_ask_pin() {
     $success = $script->addLabel('success_message');
     $script->addSay('Thank you. Phone no. is successfully added.');
     $script->addHangup();
-    if ($success) {
-    return TRUE;
-    }
+    return $script;
+}
+
+function _voipusernumber_validate_pin($pin = 1234) {
+  $form_pin = variable_get('pin_variable_ask','');
+  dsm($form_pin);   
+  if (is_null($pin)) {
+    watchdog('multifactor', 'Pin number is null.');
+    return FALSE;
+  }
+
+  if ($pin != $form_pin) {
+    watchdog('multifactor', 'Invalid Pin. Input: @pin', array('@pin' => $pin), WATCHDOG_NOTICE);
+    return FALSE;
+  }
+
+  watchdog('multifactor', 'Pin matches.');
+  return TRUE;
 }

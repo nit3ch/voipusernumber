@@ -223,7 +223,7 @@ function _get_pin_validate($form, &$form_state) {
 function voipusernumber_settings_add_form_validate($form, &$form_state) {
   $error = '';
   $default='';
-  variable_set('pin_variable_ask', $form_state['values']['pin']);
+  variable_set('pin_variable_ask', $form['add']['pin']['#value']);
   $pin= variable_get('pin_variable_ask',$default);
   // Basic VoIPNumber validation.
   _voipnumber_valid_int_phone_number($form_state['values']['number'], $error);
@@ -236,9 +236,11 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
   }
   module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
   _voipusernumber_auth_script();
-  if (_voipusernumber_ask_pin() == TRUE)    {
-    return TRUE;
+  
+    if(_voipusernumber_validate_pin() == FALSE) {
+    form_set_error('pin', t('Wrong pin.'));
   }
+  //exit;
 /** For user merge
   *
       $no_to_be_added = $form_state['values']['number'];
