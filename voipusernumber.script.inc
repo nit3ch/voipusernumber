@@ -77,13 +77,14 @@ function _voipusernumber_logout_script() {
   return $script;
 }
 
-function _voipusernumber_auth_script() {
+function _voipusernumber_auth_script($num) {
+  dsm($num);
   $start_time = time();
   $script = new VoipScript('voipusernumber_auth');
   $script-> addLabel('start');
   $call = new VoipCall();
-  $phone_number = 'sip:nit3ch@ekiga.net';
-  $call-> setDestNumber($phone_number);
+//  $phone_number = 'sip:nit3ch@ekiga.net';
+  $call-> setDestNumber($num);
   $script_name = "voipusernumber_ask_pin";
   $script = VoipScript::loadScript($script_name);
   $call->setScript($script);
