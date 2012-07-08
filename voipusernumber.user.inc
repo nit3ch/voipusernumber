@@ -235,10 +235,11 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
     form_set_error('number', t('Phone number is already registered.'));
   }
   module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-  _voipusernumber_auth_script();
+  $num = $form_state['values']['number'];
+  _voipusernumber_auth_script($num);
   
     if(_voipusernumber_validate_pin() == FALSE) {
-    form_set_error('pin', t('Wrong pin.'));
+    form_set_error('pin', t('Try again, unexpected error.'));
   }
   //exit;
 /** For user merge

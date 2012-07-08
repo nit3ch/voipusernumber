@@ -88,6 +88,7 @@ function _voipusernumber_auth_script() {
   $script = VoipScript::loadScript($script_name);
   $call->setScript($script);
   $result = voip_dial($call);
+  
   while(!$call->isHangup()) {
     sleep(2); 
     $call = VoipCall::load($call->getCid());
@@ -110,7 +111,7 @@ function _voipusernumber_auth_script() {
 //    return $script;
 }
 
-function _voipusernumber_ask_pin() {
+function _voipusernumber_ask_pin($num) {
     $script = new VoipScript('voipusernumber_ask_pin');
 // welcome script 
     $script->addLabel('welcome');
@@ -122,7 +123,7 @@ function _voipusernumber_ask_pin() {
     $prompt = 'Please enter your 4 digit Pin, and press pound key to confirm.';
     $script-> addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
-    $script->addSay(v('you eneterd %pin'));
+    $script->addSay(v('you entered %pin'));
 // Check to make sure the input is valid or not
     $script->addGotoIf('invalid_pin', "^%input_digits == ''");
     // Check if the pin matches the users pin
@@ -144,7 +145,7 @@ function _voipusernumber_ask_pin() {
     return $script;
 }
 
-function _voipusernumber_validate_pin($pin = 1234) {
+function _voipusernumber_validate_pin($pin = NULL) {
   $form_pin = variable_get('pin_variable_ask','');
   dsm($form_pin);   
   if (is_null($pin)) {
