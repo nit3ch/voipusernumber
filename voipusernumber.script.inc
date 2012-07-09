@@ -47,12 +47,11 @@ function _voipusernumber_autologin_script($number, $create = FALSE) {
     watchdog('voipusernumber', 'Voip call associated with user %name.', array('%name' => $user->name));
   }
   elseif ($create) {
-    $uid = voipusernumber_user_create($number,$option);
+    $uid = voipusernumber_user_create($number);
     $user = user_load($uid);
     watchdog('voipusernumber', 'Voip call account created and associated with user %name.', array('%name' => $user->name));
   }
   else {
-    
     $user = user_load(0);
   }
 
@@ -76,44 +75,45 @@ function _voipusernumber_logout_script() {
   $script->addSet('user_name', $user->name);
   return $script;
 }
-
+/*
+ * Script for making call to the phone no. which is going to be added.
+ */
 function _voipusernumber_auth_script($num) {
-  dsm($num);
   $start_time = time();
   $script = new VoipScript('voipusernumber_auth');
   $script-> addLabel('start');
   $call = new VoipCall();
-//  $phone_number = 'sip:nit3ch@ekiga.net';
   $call-> setDestNumber($num);
   $script_name = "voipusernumber_ask_pin";
   $script = VoipScript::loadScript($script_name);
   $call->setScript($script);
   $result = voip_dial($call);
-  
   while(!$call->isHangup()) {
     sleep(2); 
     $call = VoipCall::load($call->getCid());
 // Check Maximum execution time.
     if (time() - $start_time > 60) {
-      watchdog('multifactor', 'Reached maximum execution time. Status: ' . var_export($call->getCallStatus(), TRUE));
+      watchdog('voipusernumber', 'Reached maximum execution time. Status: ' . var_export($call->getCallStatus(), TRUE));
       break;
     }
   }
   if ($result) {
-     watchdog('voipusernumber', "call successfully queued for $phone_number");
-     //return TRUE;
+     watchdog('voipusernumber', "call successfully queued for $num");
   }
   else {
      $msg = $call->getErrorMessage();
      $details = array('@msg' => $msg);
      watchdog('voipusernumber', 'Call failed with the following error: @msg',$details, WATCHDOG_WARNING);
-    //return FALSE;
   }
-//    return $script;
 }
 
-function _voipusernumber_ask_pin($num) {
+/*
+ * Sript to verify pin, if the pin matches phone no. is added
+ */
+
+function _voipusernumber_ask_pin() {
     $script = new VoipScript('voipusernumber_ask_pin');
+
 // welcome script 
     $script->addLabel('welcome');
     $script->addSay('welcome to voxvox');
@@ -125,13 +125,9 @@ function _voipusernumber_ask_pin($num) {
     $script-> addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
     $script->addSay(v('you entered %pin'));
-// Check to make sure the input is valid or not
     $script->addGotoIf('invalid_pin', "^%input_digits == ''");
-    // Check if the pin matches the users pin
-    //$form_pin = variable_get('pin_variable_ask');
-    //$script->addGotoIf('success_message', '^%input_digits' == $form_pin);
+//call a drupal function to vaildate the pin provided by the phone user
     $script->addSet('success', '^_voipusernumber_validate_pin(%pin)');
-    // Check for success because if we check for failure the success goto might accidentally get called.
     $script->addGotoIf('success_message', '^%success == TRUE');
     
     // Invalid pin messages.
@@ -145,6 +141,10 @@ function _voipusernumber_ask_pin($num) {
     $script->addHangup();
     return $script;
 }
+
+/*
+ * Check for the pin match 
+ */
 
 function _voipusernumber_validate_pin($pin = NULL) {
   $form_pin = variable_get('pin_variable_ask','');

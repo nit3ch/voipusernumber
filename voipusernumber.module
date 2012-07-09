@@ -76,7 +76,6 @@ function voipusernumber_menu() {
   return $items;
 }
 
-
 /**
  * Menu access callback.
  */
@@ -222,6 +221,7 @@ function voipusernumber_user_categories() {
  */
 function voipusernumber_user_create($number, $options = array()) {
   $defaults = array(
+    'pass' => user_password(8),
     'number_status' => 0,
     'number_prefix' => '',
     'user_status' => 1,
@@ -231,13 +231,13 @@ function voipusernumber_user_create($number, $options = array()) {
      // @todo set language to site default?
     'language' => '',
   );
-  $options += $defaults;  
+  $options += $defaults;
+
   while (! $uid) {
     $voipnumber = new VoipUserNumber($number, NULL, $number_prefix, $phone_status);
     $account = user_save(NULL, array(
-//      'name' => variable_get('voipusernumber_registration_username', 'Drupal-') . mt_rand(1, db_result(db_query('SELECT MAX(uid) FROM {users}')) * 10),
-      'name' => $number,
-      'pass' => $option['pass'],
+      'name' => variable_get('voipusernumber_registration_username', 'Drupal-') . mt_rand(1, db_result(db_query('SELECT MAX(uid) FROM {users}')) * 10),
+      'pass' => $options['pass'],
       'mail' => $options['mail'],
       'roles' => $options['roles'],
       'status' => $options['user_status'],
