@@ -146,13 +146,7 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
 }
 
 function voipusernumber_do_user_merge($current_user,$assoc_user) {
-  if (usermerge_validate_merge($assoc_user, $current_user)) {
     module_invoke_all('user_merge', $assoc_user, $current_user);
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
 }
 /**
  * Implement hook_usermerge_merge_users().
