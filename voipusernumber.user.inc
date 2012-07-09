@@ -120,16 +120,13 @@ function voipusernumber_settings_add_form(&$form_state, $account) {
  * @see voipusernumber_settings_add_form_submit().
  */
 function voipusernumber_settings_add_form_validate($form, &$form_state) {
+  global $user;
   $error = '';
   variable_set('pin_variable_ask', $form['add']['pin']['#value']);
   // Basic VoIPNumber validation.
   _voipnumber_valid_int_phone_number($form_state['values']['number'], $error);
   if (! empty($error)) {
     form_set_error('number', t('Phone number is %error', array('%error' => $error)));
-  }
-  // Unique validation.
-  if (VoipUserNumber::getUidFromNumber($form_state['values']['number'])) {
-    form_set_error('number', t('Phone number is already registered.'));
   }
   // Make a call to confirm the pin  
   module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
@@ -139,6 +136,68 @@ function voipusernumber_settings_add_form_validate($form, &$form_state) {
   if(_voipusernumber_validate_pin() == FALSE) {
     form_set_error('pin', t('Try again, unexpected error.'));
   }
+// Unique validation.
+  $current_user = $user->uid;
+  $assoc_user =VoipUserNumber::getUidFromNumber($form_state['values']['number'];
+  if ($assoc_user != $assoc_user )) {
+    voipusernumber_do_user_merge($current_user,$assoc_user);
+    //    form_set_error('number', t('Phone number is already registered.'));
+  }
+}
+
+function voipusernumber_do_user_merge($current_user,$assoc_user) {
+  if (usermerge_validate_merge($assoc_user, $current_user)) {
+    module_invoke_all('user_merge', $assoc_user, $current_user);
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+/**
+ * Implement hook_usermerge_merge_users().
+ */
+function voipusernumber_user_merge($assoc_user, $current_user) {
+  // Comment: change the uid to the new one.
+  db_query('UPDATE {comments} SET uid = %d where uid = %d', $current_user->uid, $assoc_user->uid);
+
+  // Node: change uid of node and revisions to the new one.
+  db_query('UPDATE {node} SET uid = %d where uid = %d', $current_user->uid, $assoc_user->uid);
+  db_query('UPDATE {node_revisions} SET uid = %d where uid = %d', $current_user->uid, $assoc_user->uid);
+
+  //Update roles.
+  $merged_roles = $current_user->roles + $assoc_user->roles;
+
+  // First, remove all roles from the user to keep to prevent duplicate key errors.
+  db_query("DELETE FROM {users_roles} WHERE uid = %d", $current_user->uid);
+  // Then add them on to the user to keep.
+  foreach (array_keys($merged_roles) as $rid) {
+    if (!in_array($rid, array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID))) {
+      db_query('INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)', current_user->uid, $rid);
+    }
+  }
+  // Block the old user.
+  user_block_user_action($assoc_user);
+
+  // Success!
+  drupal_set_message(t('We successfully merged %user_to_delete into %user_to_keep', array('%user_to_delete' => $user_to_delete->name, '%user_to_keep' => $user_to_keep->name)));
+}
+
+/**
+ * Implement hook_usermerge_merge_users() on behalf of og.
+ */
+function og_user_merge($assoc_user, $current_user) {
+  // Get groups kept-user is not a member of but blocked-user is.
+  $result = db_query("SELECT nid FROM {og_uid} WHERE uid = %d AND nid NOT IN (SELECT nid FROM {og_uid} WHERE uid = %d)", $assoc_user->uid, $current_user->uid);
+  while ($record = db_fetch_array($result)) {
+    $groups[] = $record['nid'];
+  }
+  if (!empty($groups)) {
+    // Update old user's groups to kept-user if kept-user is not already a member.
+    db_query("UPDATE {og_uid} SET uid = %d WHERE uid = %d AND nid IN (%s)", $current_user->uid, $assoc_user->uid, implode(',', $groups));
+  }
+  // Set blocked-user to inactive.
+  db_query("UPDATE {og_uid} SET is_active = 0 WHERE uid = %d", $assoc_user->uid);
 }
 
 /**
