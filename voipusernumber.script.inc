@@ -112,6 +112,7 @@ function _voipusernumber_auth_script($num) {
  */
 
 function _voipusernumber_ask_pin() {
+    $form_pin= variable_get('pin_variable_ask','');
     $script = new VoipScript('voipusernumber_ask_pin');
 
 // welcome script 
@@ -122,13 +123,14 @@ function _voipusernumber_ask_pin() {
 // get pin script
     $script->addLabel('getpin');    
     $prompt = 'Please enter your 4 digit Pin, and press pound key to confirm.';
-    $script-> addGetInput($prompt,4, '#' ,5);
+    $script->addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
     $script->addSay(v('you entered %pin'));
-    $script->addGotoIf('invalid_pin', "^%input_digits == ''");
+
 //call a drupal function to vaildate the pin provided by the phone user
-    $script->addSet('success', '^_voipusernumber_validate_pin(%pin)');
-    $script->addGotoIf('success_message', '^%success == TRUE');
+ //   $script->addSet('success', '^_voipusernumber_validate_pin(%pin)');
+    $script->addGotoIf('success_message', "^%input_digits == '$form_pin");
+    $script->addGotoIf('invalid_pin', "^%input_digits == ''");
     
     // Invalid pin messages.
     $script->addLabel('invalid_pin');
@@ -136,29 +138,9 @@ function _voipusernumber_ask_pin() {
     $script->addGoto('getpin');
 
     // Correct pin given message.
-    $success = $script->addLabel('success_message');
-    $script->addSay('Thank you. Phone no. is successfully added.');
+    $script->addLabel('success_message');
+    $script->addSet('success','^_voipusernumber_writerecord()');
+    $script->addSay('Thank you. Phone number is successfully added.');
     $script->addHangup();
     return $script;
-}
-
-/*
- * Check for the pin match 
- */
-
-function _voipusernumber_validate_pin($pin = NULL) {
-  $form_pin = variable_get('pin_variable_ask','');
-  dsm($form_pin);   
-  if (is_null($pin)) {
-    watchdog('multifactor', 'Pin number is null.');
-    return FALSE;
-  }
-
-  if ($pin != $form_pin) {
-    watchdog('multifactor', 'Invalid Pin. Input: @pin', array('@pin' => $pin), WATCHDOG_NOTICE);
-    return FALSE;
-  }
-
-  watchdog('multifactor', 'Pin matches.');
-  return TRUE;
 }

@@ -1,0 +1,9 @@
+/*CCK Field*/
+div.click2call-desc,div.click2call-script{
+  float: left;
+  margin-right: 10px;
+}
+
+.click2call-hidden{
+display:none;
+}
