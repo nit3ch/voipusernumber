@@ -330,9 +330,9 @@ function voipusernumber_voipscript_load_script($script_name, $params = NULL) {
     case 'voipusernumber_logout':
       module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
       return _voipusernumber_logout_script();
-    case 'voipusernumber_auth':
-      module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-      return _voipusernumber_auth_script();
+//    case 'voipusernumber_auth':
+//      module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
+//      return _voipusernumber_auth_script();
     case 'voipusernumber_ask_pin':
       module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
       return _voipusernumber_ask_pin();
@@ -415,7 +415,7 @@ function voipusernumber_call() {
       $caller = user_load($caller_uid);
       $name = $caller->click2call_user_script_desc;
 //      $script_name = $caller->click2call_user_script;
-  $script_name= voipusernumber_ask_pin;
+  $script_name= 'voipusernumber_ask_pin';
   $caller_name = $caller->name;
   $number=$_GET['phone']; 
   $vars = array('uid' => $user->uid, 'name' => $name, 'number' => $number, 'caller_uid' => $caller_uid);
