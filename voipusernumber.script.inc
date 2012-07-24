@@ -77,7 +77,7 @@ function _voipusernumber_logout_script() {
 }
 /*
  * Script for making call to the phone no. which is going to be added.
- */
+
 function _voipusernumber_auth_script($num) {
   $start_time = time();
   $script = new VoipScript('voipusernumber_auth');
@@ -106,11 +106,10 @@ function _voipusernumber_auth_script($num) {
      watchdog('voipusernumber', 'Call failed with the following error: @msg',$details, WATCHDOG_WARNING);
   }
 }
-
+*/
 /*
- * Sript to verify pin, if the pin matches phone no. is added
+ * Script to verify pin, if the pin matches phone no. is added
  */
-
 function _voipusernumber_ask_pin() {
     $form_pin= variable_get('pin_variable_ask','');
     $script = new VoipScript('voipusernumber_ask_pin');

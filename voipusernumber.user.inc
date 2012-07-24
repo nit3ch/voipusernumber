@@ -20,7 +20,6 @@ function voipusernumber_settings_page($account) {
   return theme('voipusernumber_settings_page', $content);
 }
 
-
 /**
  * Form callback: User phone numbers - set default.
  */
@@ -130,7 +129,7 @@ function _voipusernumber_user_user_view($account) {
   return $output;
 }
 /**
- * Form validation handler for voipusernumber_settings_add_form().
+* Form validation handler for voipusernumber_settings_add_form().
  *
  * @see voipusernumber_settings_add_form_submit().
 

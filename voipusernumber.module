@@ -67,7 +67,6 @@ function voipusernumber_menu() {
     'tab_parent' => 'user/%/edit',
     'file' => 'voipusernumber.user.inc',
   );
-
   $items['user/%user/edit/voipnumber/add'] = array(
     'title' => 'Add number',
     'page callback' => 'drupal_get_form',
@@ -95,7 +94,7 @@ function voipusernumber_menu() {
     'description' => '',
     'page callback' => 'voipusernumber_call',
     'type' => MENU_CALLBACK,
-    'access callback' => TRUE,
+    'access callback' =>'user_access',
   );
    
   $items['voipnumber/get/status'] = array(
@@ -103,7 +102,7 @@ function voipusernumber_menu() {
     'description' => '',
     'page callback' => 'voipusernumber_get_status',
     'type' => MENU_CALLBACK,
-    'access callback' => TRUE,
+    'access callback' => 'user_access',
   );
    
   $items['voipnumber/hangup'] = array(
@@ -111,7 +110,7 @@ function voipusernumber_menu() {
     'description' => '',
     'page callback' => 'voipusernumber_hangup',
     'type' => MENU_CALLBACK,
-    'access callback' => TRUE,
+    'access callback' => 'user_access',
   );
 
   return $items;
@@ -335,7 +334,9 @@ function voipusernumber_voipscript_load_script($script_name, $params = NULL) {
 //      return _voipusernumber_auth_script();
     case 'voipusernumber_ask_pin':
       module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
+      watchdog('voipusernumber',' loadscript has been called @script', array('@script'=>$script));
       return _voipusernumber_ask_pin();
+     
   }
 }
 
@@ -408,34 +409,36 @@ function voipusernumber_call() {
  if($_GET['field_name'] == 'user') {
       //User profile
       //Permission checking
-//      if (!user_access('access click2call in user profiles')) {
+//      if (!user_access('Edit own VoIP user number')) {
 //        return;
 //      }
-      $caller_uid = $_GET['delta'];
-      $caller = user_load($caller_uid);
-      $name = $caller->click2call_user_script_desc;
-//      $script_name = $caller->click2call_user_script;
+  $caller_uid = $_GET['delta'];
+  $caller = user_load($caller_uid);
+//$name = $caller->click2call_user_script_desc;
+  $name = 'nitesh';
+//$script_name = $caller->click2call_user_script;
   $script_name= 'voipusernumber_ask_pin';
   $caller_name = $caller->name;
   $number=$_GET['phone']; 
   $vars = array('uid' => $user->uid, 'name' => $name, 'number' => $number, 'caller_uid' => $caller_uid);
   $script = VoipScript::loadScript($script_name,$vars);
-  
-  if($script) {
-  watchdog('voipusernumber',"$script has been loaded");
+  print_r(dsm($script));
+  if(!empty($script)) {
+    watchdog('voipusernumber', "new script $script_name: " . print_r($script, true));
   }
   $call = new VoipCall();
   $call->setDestNumber($number);
   $call->setDestName($user->name);
   $call->setCallerName($caller_name);
   $call->setScript($script);
+//  watchdog('voipusernumber', " new call$call: " . print_r($call, true));
   $call->save();
-    
-  // Dial the call.
-if(voip_dial($call)) {
-watchdog('voipusernumber', 'call has been made');
-}
-  
+     // Dial the call.
+  $result = voip_dial($call);
+  if($result) {
+  watchdog('voipusernumber','dial call has been made @script', array('@script'=>$script));
+  }
+   
   // Log call with watchdog
   $type = 'click2call';
   $message = t("New Click2Call message recorded by $user->name to phone $number. See voipcall nid " . $call->getCid());

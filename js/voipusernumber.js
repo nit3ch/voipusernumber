@@ -29,7 +29,7 @@ function click2call_display(field_name,delta) {
 }
 
 
-function click2call_call(field_name,delta,nid) { 
+function click2call_call(field_name,delta,nid) {  
 	//Disable the button
 	$("#click2call-button-"+field_name+"-"+delta).attr('disabled', 'disabled');	
     //Remove error message
