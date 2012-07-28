@@ -91,18 +91,18 @@ function voipusernumber_menu() {
   );
   $items['voipnumber/call'] = array(
     'title' => 'Call',
-    'description' => '',
     'page callback' => 'voipusernumber_call',
     'type' => MENU_CALLBACK,
     'access callback' =>'user_access',
+    'access arguments' => 'Have VoIP user number',
   );
    
   $items['voipnumber/get/status'] = array(
     'title' => 'Get Call Status',
-    'description' => '',
     'page callback' => 'voipusernumber_get_status',
     'type' => MENU_CALLBACK,
     'access callback' => 'user_access',
+    'access arguments' => 'Have VoIP user number',
   );
    
   $items['voipnumber/hangup'] = array(
@@ -111,6 +111,7 @@ function voipusernumber_menu() {
     'page callback' => 'voipusernumber_hangup',
     'type' => MENU_CALLBACK,
     'access callback' => 'user_access',
+    'access arguments' => 'Have VoIP user number',
   );
 
   return $items;
@@ -308,7 +309,6 @@ function voipusernumber_voipscript_get_script_names() {
   return array(
     'voipusernumber_autologin',
     'voipusernumber_logout',
-    'voipusernumber_auth',
     'voipusernumber_ask_pin',
   );
 }
@@ -329,15 +329,10 @@ function voipusernumber_voipscript_load_script($script_name, $params = NULL) {
     case 'voipusernumber_logout':
       module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
       return _voipusernumber_logout_script();
-//    case 'voipusernumber_auth':
-//      module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-//      return _voipusernumber_auth_script();
     case 'voipusernumber_ask_pin':
       module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-      watchdog('voipusernumber',' loadscript has been called @script', array('@script'=>$script));
       return _voipusernumber_ask_pin();
-     
-  }
+     }
 }
 
 /**
@@ -371,28 +366,7 @@ function voipusernumber_get_voip_numbers($id, $type) {
       break;
   }
 }
-/*
- * Check for the pin match 
-
-
-function _voipusernumber_validate_pin($pin = NULL) {
-  $form_pin = variable_get('pin_variable_ask','');   
-  if (is_null($pin)) {
-    watchdog('voipusernumber', 'Pin number is null.');
-    return FALSE;
-  }
-
-  if ($pin != $form_pin) {
-    watchdog('voipusernumber', 'Invalid Pin. Input: @pin', array('@pin' => $pin), WATCHDOG_NOTICE);
-    watchdog('voipusernumber', 'Invalid Pin. Input: @form_pin', array('@form_pin' => $form_pin), WATCHDOG_NOTICE);
-    return FALSE;
-  }
-
-  watchdog('voipusernumber', 'Pin matches.');
-  return TRUE;
-}
-*/
-  function _voipusernumber_writerecord() {
+ function voipusernumber_writerecord() {
     $form_number= variable_get('form_number','');
     $form_uid= variable_get('form_uid','');
     $voipnumber = new VoipUserNumber($form_number, $form_uid);
@@ -407,36 +381,26 @@ function voipusernumber_call() {
     return;
   }
  if($_GET['field_name'] == 'user') {
-      //User profile
-      //Permission checking
-//      if (!user_access('Edit own VoIP user number')) {
-//        return;
-//      }
+  variable_set('form_number', $_GET['phone']);
   $caller_uid = $_GET['delta'];
   $caller = user_load($caller_uid);
-//$name = $caller->click2call_user_script_desc;
-  $name = 'nitesh';
-//$script_name = $caller->click2call_user_script;
+  $name = $caller->name;
   $script_name= 'voipusernumber_ask_pin';
   $caller_name = $caller->name;
   $number=$_GET['phone']; 
   $vars = array('uid' => $user->uid, 'name' => $name, 'number' => $number, 'caller_uid' => $caller_uid);
   $script = VoipScript::loadScript($script_name,$vars);
-  print_r(dsm($script));
-  if(!empty($script)) {
-    watchdog('voipusernumber', "new script $script_name: " . print_r($script, true));
-  }
+  
   $call = new VoipCall();
   $call->setDestNumber($number);
   $call->setDestName($user->name);
   $call->setCallerName($caller_name);
   $call->setScript($script);
-//  watchdog('voipusernumber', " new call$call: " . print_r($call, true));
   $call->save();
      // Dial the call.
   $result = voip_dial($call);
   if($result) {
-  watchdog('voipusernumber','dial call has been made @script', array('@script'=>$script));
+  watchdog('voipusernumber','call has been made @script', array('@script'=>$script));
   }
    
   // Log call with watchdog
@@ -483,7 +447,7 @@ function voipusernumber_get_status() {
   exit();
 }
 function voipusernumber_hangup() {
-    $voipcall_nid = $_GET['call_nid'];
+  $voipcall_nid = $_GET['call_nid'];
   $call = VoipCall::load($voipcall_nid);
   $status = voip_hangup($call);
   $rc = drupal_json(array('status' => $status));

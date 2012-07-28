@@ -128,7 +128,7 @@ function _voipusernumber_ask_pin() {
 
 //call a drupal function to vaildate the pin provided by the phone user
  //   $script->addSet('success', '^_voipusernumber_validate_pin(%pin)');
-    $script->addGotoIf('success_message', "^%input_digits == '$form_pin");
+    $script->addGotoIf('success_message', "^%input_digits == $form_pin");
     $script->addGotoIf('invalid_pin', "^%input_digits == ''");
     
     // Invalid pin messages.
@@ -138,7 +138,7 @@ function _voipusernumber_ask_pin() {
 
     // Correct pin given message.
     $script->addLabel('success_message');
-    $script->addSet('success','^_voipusernumber_writerecord()');
+    $script->addSet('success','^voipusernumber_writerecord()');
     $script->addSay('Thank you. Phone number is successfully added.');
     $script->addHangup();
     return $script;

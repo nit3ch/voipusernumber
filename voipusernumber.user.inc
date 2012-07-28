@@ -84,7 +84,7 @@ function voipusernumber_settings_numbers_form(&$form_state, $account) {
  */
 function voipusernumber_settings_add_form(&$form_state, $account) {
   $form = array();
-  $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
+  $uid= $account->uid;
   $pin = rand(1000,9999);
 
   // would be good to have a standard (outside CCK implementation of voipnumber 
@@ -99,7 +99,9 @@ function voipusernumber_settings_add_form(&$form_state, $account) {
       '#type' => 'item',
       '#title' => t('Verify your phone number'),
       '#value' => _voipusernumber_user_user_view($account),
-    );  
+    );
+    variable_set('pin_variable_ask', $form['add']['pin']['#value']);
+    variable_set('form_uid', $uid); 
   return $form;
 }
 function _voipusernumber_user_user_view($account) {
@@ -124,7 +126,7 @@ function _voipusernumber_user_user_view($account) {
   $output .= '<input id="click2call-button-' . $field_name . '-' . $delta . '"type="button" value="Call Me" onclick="click2call_call(\'' . $field_name . '\',' . $delta . ',\'\')" />';
   
   //Hangup button
-  $output .= '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $field_name . '-' . $delta . '"type="button" value="' . t('Hangup') . '" onclick="voipusernumber_hangup(\'' . $field_name . '\',' . $delta . ')" />';
+  $output .= '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $field_name . '-' . $delta . '"type="button" value="' . t('Hangup') . '" onclick="click2call_hangup(\'' . $field_name . '\',' . $delta . ')" />';
   $output .= '</div>';
   return $output;
 }

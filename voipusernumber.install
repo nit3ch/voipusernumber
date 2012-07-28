@@ -43,6 +43,12 @@ function voipusernumber_schema() {
  */
 function voipusernumber_install() {
   drupal_install_schema('voipusernumber');
+  $ret = array();
+  $schema['user'] = array();
+  voipusernumber_schema_alter($schema);
+  foreach ($schema['user']['fields'] as $name => $spec) {
+    db_add_field($ret, 'user', $name, $spec);
+  }
 }
 
 /**
@@ -50,6 +56,12 @@ function voipusernumber_install() {
  */
 function voipusernumber_uninstall() {
   drupal_uninstall_schema('voipusernumber');
+  $ret = array();
+  $schema['user'] = array();
+  mymodule_schema_alter($schema);
+  foreach ($schema['user']['fields'] as $name => $spec) {
+    db_drop_field($ret, 'user', $name);
+  }
 }
 
 /**
