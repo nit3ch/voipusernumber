@@ -11,4 +11,4 @@ To do:
   1. Authentication
   2. Registration verification (by SMS?)
 
-Note: This code is originally written by leoburd, i am contributing to it. 
+

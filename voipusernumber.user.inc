@@ -131,40 +131,7 @@ function _voipusernumber_user_user_view($account) {
   return $output;
 }
 /**
-* Form validation handler for voipusernumber_settings_add_form().
- *
- * @see voipusernumber_settings_add_form_submit().
-
-function voipusernumber_settings_add_form_validate($form, &$form_state) {
-  global $user;
-  $error = '';
-//  variable_set('pin_variable_ask', $form['add']['pin']['#value']); 
-  variable_set('pin_variable_ask', $form_state['values']['pin']);
-  variable_set('form_number', $form_state['values']['number']);
-  variable_set('form_uid', $form_state['values']['uid']); 
-  $form_pin = $form_state['values']['pin'];
-  // Basic VoIPNumber validation.
-//  _voipnumber_valid_int_phone_number($form_state['values']['number'], $error);
-//  if (! empty($error)) {
-//    form_set_error('number', t('Phone number is %error', array('%error' => $error)));
-//  }
-  // Unique validation.
-  if (VoipUserNumber::getUidFromNumber($form_state['values']['number'])) {
-    form_set_error('number', t('Phone number is already registered.'));
-  }
-  // Make a call to confirm the pin  
-  module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-  $num = $form_state['values']['number'];
-  _voipusernumber_auth_script($num);
-  // Pin verification
-//  if(_voipusernumber_ask_pin($form_pin) == FALSE) {
-//    form_set_error('pin', t('Try again, unexpected error.'));
-  } 
-  */
-/**
  * Form submission handler for voipusernumber_settings_add_form().
- *
- * @see voipusernumber_settings_add_form_validate().
  */
 function voipusernumber_settings_add_form_submit($form, &$form_state) {
   

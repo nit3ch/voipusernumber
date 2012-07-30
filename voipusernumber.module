@@ -399,10 +399,6 @@ function voipusernumber_call() {
   $call->save();
      // Dial the call.
   $result = voip_dial($call);
-  if($result) {
-  watchdog('voipusernumber','call has been made @script', array('@script'=>$script));
-  }
-   
   // Log call with watchdog
   $type = 'click2call';
   $message = t("New Click2Call message recorded by $user->name to phone $number. See voipcall nid " . $call->getCid());

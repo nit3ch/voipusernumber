@@ -39,9 +39,13 @@ function click2call_call(field_name,delta,nid) {
 	if(phone=="voipnumber"){
 		//Get the phone number from select list
 		phone=$("#click2call-"+field_name+"-"+delta+"-select :selected").val();
+		console.log('in voip number');
+		console.log(phone);
 	}
 	else if(phone=="type"){
 		phone=$("#click2call-"+field_name+"-"+delta+"-type-phone").val();
+		console.log('in type');
+		console.log(phone);
 	}
 	
 	//Hide the phone number selection
@@ -55,6 +59,7 @@ function click2call_call(field_name,delta,nid) {
 			data: "phone=" + encodeURIComponent(phone)+"&field_name="+field_name+"&delta="+delta+"&nid="+nid,
 			dataType: 'json',
 			success: function(data){
+			console.log('i am in sucess');
 						click2call_response(data,field_name,delta);
 					}
 		});
