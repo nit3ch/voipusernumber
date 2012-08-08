@@ -35,23 +35,8 @@ function voipusernumber_theme() {
     ),
   );
 }
+ 
  /**
- * Implementation of hook_schema_alter().
- *
- * @param &$schema Nested array describing the schemas for all modules.
- */
-function voipusernumber_schema_alter(&$schema) {
-  // Add field to existing schema.
-$schema['users']['fields']['source'] = array(
-    'type' => 'varchar',
-    'unsigned' => TRUE,
-    'not null' => TRUE,
-    'default' => 'web',
-    'description' => t('User Source either from phone or web'),
-    );
-}
-
-/**
  * Implements hook_menu().
  */
 function voipusernumber_menu() {
@@ -93,25 +78,24 @@ function voipusernumber_menu() {
     'title' => 'Call',
     'page callback' => 'voipusernumber_call',
     'type' => MENU_CALLBACK,
-    'access callback' =>'user_access',
-    'access arguments' => 'Have VoIP user number',
+    'access callback' => 'voipusernumber_edit_access',
+    'access arguments' => array(1),  
   );
    
   $items['voipnumber/get/status'] = array(
     'title' => 'Get Call Status',
     'page callback' => 'voipusernumber_get_status',
     'type' => MENU_CALLBACK,
-    'access callback' => 'user_access',
-    'access arguments' => 'Have VoIP user number',
+    'access callback' => 'voipusernumber_edit_access',
+    'access arguments' => array(1),
   );
    
   $items['voipnumber/hangup'] = array(
     'title' => 'Hangup',
-    'description' => '',
     'page callback' => 'voipusernumber_hangup',
     'type' => MENU_CALLBACK,
-    'access callback' => 'user_access',
-    'access arguments' => 'Have VoIP user number',
+   'access callback' => 'voipusernumber_edit_access',
+    'access arguments' => array(1),
   );
 
   return $items;
