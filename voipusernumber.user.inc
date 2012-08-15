@@ -84,7 +84,6 @@ function voipusernumber_settings_numbers_form(&$form_state, $account) {
  */
 function voipusernumber_settings_add_form(&$form_state, $account) {
   $form = array();
-  $uid= $account->uid;
   $pin = rand(1000,9999);
 
   // would be good to have a standard (outside CCK implementation of voipnumber 
@@ -92,16 +91,15 @@ function voipusernumber_settings_add_form(&$form_state, $account) {
   $form['add']['pin'] = array(
     '#type' => 'item',
     '#title' => t('Pin'),
+    '#description' => t('Enter the pin when asked during call verification.'),
     '#value' => $pin,
   );
-  
   $form['add']['numbers'] = array(
       '#type' => 'item',
       '#title' => t('Verify your phone number'),
       '#value' => _voipusernumber_user_user_view($account),
     );
     variable_set('pin_variable_ask', $form['add']['pin']['#value']);
-    variable_set('form_uid', $uid); 
   return $form;
 }
 function _voipusernumber_user_user_view($account) {
@@ -134,7 +132,6 @@ function _voipusernumber_user_user_view($account) {
  * Form submission handler for voipusernumber_settings_add_form().
  */
 function voipusernumber_settings_add_form_submit($form, &$form_state) {
-  
 }
 
 /**

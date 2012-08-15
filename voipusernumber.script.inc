@@ -110,22 +110,27 @@ function _voipusernumber_auth_script($num) {
 /*
  * Script to verify pin, if the pin matches phone no. is added
  */
-function _voipusernumber_ask_pin() {
+function _voipusernumber_ask_pin($number,$uid) {
+    watchdog('voipusernumber', 'value of @number in script', array('@number' => $number), WATCHDOG_ERROR);
     $form_pin= variable_get('pin_variable_ask','');
+    $text="hi there";
     $script = new VoipScript('voipusernumber_ask_pin');
-
+    $script->addSet('number',$number);
+    $script->addSet('uid',$uid);
+    
 // welcome script 
     $script->addLabel('welcome');
     $script->addSay('welcome to voxvox');
+    $script->addSendText($text,'+917827620167','sms','nitesh');
     $script->addGoto('getpin');
     
 // get pin script
     $script->addLabel('getpin');    
-    $prompt = 'Please enter your 4 digit Pin, and press pound key to confirm.';
+    $prompt = 'Please enter the 4 digit Pin on screen, and press pound key to confirm.';
     $script->addGetInput($prompt,4, '#' ,5);
     $script->addSet('pin',"%input_digits");
     $script->addSay(v('you entered %pin'));
-
+    
 //call a drupal function to vaildate the pin provided by the phone user
  //   $script->addSet('success', '^_voipusernumber_validate_pin(%pin)');
     $script->addGotoIf('success_message', "^%input_digits == $form_pin");
@@ -138,8 +143,8 @@ function _voipusernumber_ask_pin() {
 
     // Correct pin given message.
     $script->addLabel('success_message');
-    $script->addSet('success','^voipusernumber_writerecord()');
-    $script->addSay('Thank you. Phone number is successfully added.');
+    $script->addSet('success','^voipusernumber_writerecord(%number,%uid)');
+    $script->addSay('Thank you. Phone number %number is successfully added ');
     $script->addHangup();
     return $script;
 }

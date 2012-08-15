@@ -7,3 +7,4 @@ dependencies[] = autoload
 files[] = voipusernumber.voipnumber.inc
 package = VoIP Drupal
 core = 6.x
+version = "6.x-1.0"

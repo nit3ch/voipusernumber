@@ -78,15 +78,15 @@ function voipusernumber_menu() {
     'title' => 'Call',
     'page callback' => 'voipusernumber_call',
     'type' => MENU_CALLBACK,
-    'access callback' => 'voipusernumber_edit_access',
-    'access arguments' => array(1),  
+    'access callback' => 'user_access',
+    'access arguments' => array(1),
   );
    
   $items['voipnumber/get/status'] = array(
     'title' => 'Get Call Status',
     'page callback' => 'voipusernumber_get_status',
     'type' => MENU_CALLBACK,
-    'access callback' => 'voipusernumber_edit_access',
+    'access callback' => 'user_access',
     'access arguments' => array(1),
   );
    
@@ -94,10 +94,9 @@ function voipusernumber_menu() {
     'title' => 'Hangup',
     'page callback' => 'voipusernumber_hangup',
     'type' => MENU_CALLBACK,
-   'access callback' => 'voipusernumber_edit_access',
-    'access arguments' => array(1),
+   'access callback' => 'user_access',
+   'access arguments' => array(1),
   );
-
   return $items;
 }
 
@@ -158,6 +157,7 @@ function voipusernumber_user_load(&$account, $category) {
  * @todo seperate insert, update; keep common together.
  */
 function voipusernumber_user_save(&$edit, &$account, $category) {
+  /**
   if (($category == 'voipnumber' || $category == 'account') && $edit['voipnumber']) {
     $numbers = $edit['voipnumber'];
     db_query('DELETE FROM {voipusernumber_numbers} WHERE uid = %d', $account->uid);
@@ -174,6 +174,7 @@ function voipusernumber_user_save(&$edit, &$account, $category) {
       drupal_write_record($number);
     }
   }
+  **/
 }
 
 /**
@@ -256,7 +257,6 @@ function voipusernumber_user_create($number, $options = array()) {
     'roles' => ($role = variable_get('voipusernumber_registration_role', NULL)) ? array($role => 1) : NULL,
      // @todo set language to site default?
     'language' => '',
-    'source' => 'phone',
   );
   $options += $defaults;
 
@@ -269,12 +269,12 @@ function voipusernumber_user_create($number, $options = array()) {
       'roles' => $options['roles'],
       'status' => $options['user_status'],
       'language' => $options['language'],
-      'source' => $options['source'],
       'voipnumber' => array(
         $number => array(
           'number' => $number,
           'status' => $options['number_status'],
           'number_prefix' => $options['number_prefix'],
+          'source'=> '',
         ),
       ),
     ));
@@ -315,7 +315,7 @@ function voipusernumber_voipscript_load_script($script_name, $params = NULL) {
       return _voipusernumber_logout_script();
     case 'voipusernumber_ask_pin':
       module_load_include('inc', 'voipusernumber', 'voipusernumber.script');
-      return _voipusernumber_ask_pin();
+      return _voipusernumber_ask_pin($params['number'],$params['uid']);
      }
 }
 
@@ -350,19 +350,48 @@ function voipusernumber_get_voip_numbers($id, $type) {
       break;
   }
 }
- function voipusernumber_writerecord() {
-    $form_number= variable_get('form_number','');
-    $form_uid= variable_get('form_uid','');
-    $voipnumber = new VoipUserNumber($form_number, $form_uid);
+
+function voipusernumber_validate(){
+  global $user;
+$error = '';
+$number=$_GET['phone'];
+  $uid=VoipUserNumber::getUidFromNumber($number);
+  // Basic VoIPNumber validation.
+  _voipnumber_valid_int_phone_number($number, $error);
+  if (! empty($error)) {
+    return FALSE;
+  }
+  // Unique validation.
+  elseif ($uid==$user->uid) {
+    watchdog('voipusernumber','phone already exist @number',array('@number'=>$number,watchdog_error));
+    return FALSE;
+  }
+  else {
+    watchdog('voipusernumber','no idea @number',array('@number'=>$number,watchdog_error));
+  return TRUE;
+  }  
+}
+ function voipusernumber_writerecord($number,$uid) { 
+    
+    $sql = db_query('select count(phone) FROM {voipusernumber_numbers} where phone=%d and source=%d',$number,NULL);
+    if($sql == '1') {
+    watchdog('voipusernumber', 'User merge has been done successfully.');
+    }
+    else {
+    $voipnumber = new VoipUserNumber($number, $uid,1,1,1);
     drupal_write_record('voipusernumber_numbers', $voipnumber);
     $account->voipnumber[$voipnumber->getNumber()] = $voipnumber;
-    watchdog('voipusernumber', 'User data added successfully.');
-} 
+         }
+}
+
 function voipusernumber_call() {
  global $user;
-
+ $val= voipusernumber_validate();
+ if($val=FALSE) {
+ return;
+ }
   if (empty($_GET['phone']) || empty($_GET['field_name'])) {
-    return;
+  return;
   }
  if($_GET['field_name'] == 'user') {
   variable_set('form_number', $_GET['phone']);
@@ -371,7 +400,8 @@ function voipusernumber_call() {
   $name = $caller->name;
   $script_name= 'voipusernumber_ask_pin';
   $caller_name = $caller->name;
-  $number=$_GET['phone']; 
+  $number=$_GET['phone'];
+  $uid= $user->uid;
   $vars = array('uid' => $user->uid, 'name' => $name, 'number' => $number, 'caller_uid' => $caller_uid);
   $script = VoipScript::loadScript($script_name,$vars);
   

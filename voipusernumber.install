@@ -32,12 +32,24 @@ function voipusernumber_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-    ),
+   ), 
     'primary key' => array('phone'),
   );
   return $schema;
 }
-
+/**
+ * Implementation of hook_update_N().
+ */
+function voipusernumber_update_6100() {
+  $ret = array();
+  db_add_field($ret, 'voipusernumber_numbers', 'source',
+    array(
+      'type' => 'int',
+      'dafault'=> '',
+    )
+  );
+  return $ret;
+}
 /**
  * Implements hook_install().
  */

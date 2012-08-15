@@ -85,12 +85,14 @@ function click2call_response(data,field_name,delta){
 	$("#click2call-"+field_name+"-"+delta+"-callnid").val(data.call_nid);
 	// Check for call status after 3 sec.
 	window.setTimeout(function() {
+	console.log('i am in responce');
 		click2call_check(data.call_nid,field_name,delta);
 	}, 3000);
 
 }
 
 function click2call_check(call_nid,field_name,delta){
+console.log('i am in check');
 $.ajax({
 		type: "GET",
 		url: Drupal.settings.basePath +"?q=voipnumber/get/status",
