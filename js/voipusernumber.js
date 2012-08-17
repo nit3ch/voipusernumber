@@ -53,16 +53,16 @@ function click2call_call(field_name,delta,nid) {
     $(".click2call-"+field_name+"-"+delta+"-phone").html("Calling...");
 		//Enable hangup button
 		$("#click2call-hangup-button-"+field_name+"-"+delta).removeAttr("disabled");	
-		$.ajax({
-			type: "GET",
-			url: Drupal.settings.basePath +"?q=voipnumber/call",
-			data: "phone=" + encodeURIComponent(phone)+"&field_name="+field_name+"&delta="+delta+"&nid="+nid,
-			dataType: 'json',
-			success: function(data){
-			console.log('i am in sucess');
-						click2call_response(data,field_name,delta);
-					}
-		});
+			$.ajax({
+				type: "GET",
+				url: Drupal.settings.basePath +"?q=voipnumber/call",
+				data: "phone=" + encodeURIComponent(phone)+"&field_name="+field_name+"&delta="+delta+"&nid="+nid,
+				dataType: 'json',
+				success: function(data){
+				console.log('i am in sucess');
+				click2call_response(data,field_name,delta);
+						}
+			});
 } 
 
 function click2call_hangup(field_name,delta){

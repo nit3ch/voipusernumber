@@ -88,7 +88,11 @@ function voipusernumber_settings_add_form(&$form_state, $account) {
 
   // would be good to have a standard (outside CCK implementation of voipnumber 
   // elements?
-  $form['add']['pin'] = array(
+  $form['add']['phone'] = array(
+    '#type' => 'item',
+    '#value' => l(t('List of your phone numbers'), 'user/' . $account->uid . '/edit/voipnumber'),
+  );
+   $form['add']['pin'] = array(
     '#type' => 'item',
     '#title' => t('Pin'),
     '#description' => t('Enter the pin when asked during call verification.'),

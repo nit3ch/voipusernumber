@@ -78,24 +78,21 @@ function voipusernumber_menu() {
     'title' => 'Call',
     'page callback' => 'voipusernumber_call',
     'type' => MENU_CALLBACK,
-    'access callback' => 'user_access',
-    'access arguments' => array(1),
+    'access arguments' => array('Edit own VoIP user number'),
   );
    
   $items['voipnumber/get/status'] = array(
     'title' => 'Get Call Status',
     'page callback' => 'voipusernumber_get_status',
     'type' => MENU_CALLBACK,
-    'access callback' => 'user_access',
-    'access arguments' => array(1),
+    'access arguments' => array('Edit own VoIP user number'),
   );
    
   $items['voipnumber/hangup'] = array(
     'title' => 'Hangup',
     'page callback' => 'voipusernumber_hangup',
     'type' => MENU_CALLBACK,
-   'access callback' => 'user_access',
-   'access arguments' => array(1),
+   'access arguments' => array('Edit own VoIP user number'),
   );
   return $items;
 }
@@ -360,35 +357,116 @@ $number=$_GET['phone'];
   _voipnumber_valid_int_phone_number($number, $error);
   if (! empty($error)) {
     return FALSE;
+    
   }
   // Unique validation.
   elseif ($uid==$user->uid) {
-    watchdog('voipusernumber','phone already exist @number',array('@number'=>$number,watchdog_error));
-    return FALSE;
+    watchdog('voipusernumber','phone exist @number',array('@number'=>$number),watchdog_error);
+     return FALSE;
+    
   }
   else {
-    watchdog('voipusernumber','no idea @number',array('@number'=>$number,watchdog_error));
+    watchdog('voipusernumber','validation pass @number',array('@number'=>$number),watchdog_error);
   return TRUE;
   }  
 }
  function voipusernumber_writerecord($number,$uid) { 
-    
-    $sql = db_query('select count(phone) FROM {voipusernumber_numbers} where phone=%d and source=%d',$number,NULL);
-    if($sql == '1') {
+ $result = db_query('select ifnull(uid,0) uid FROM {voipusernumber_numbers} where phone=%s and source=%d',$number,0);
+    while ($record = db_fetch_object($result)) {
+      $uidtomerge = $record->uid;
+    }
+    if($uidtomerge != '') {
+    voipusernumber_do_user_merge($uid,$uidtomerge);
     watchdog('voipusernumber', 'User merge has been done successfully.');
+    $voipnumber = new VoipUserNumber($number, $uid,1,1,1);
+    drupal_write_record('voipusernumber_numbers', $voipnumber);
+    $account->voipnumber[$voipnumber->getNumber()] = $voipnumber;
     }
     else {
+    $sql= db_query('select uid from {voipusernumber_numbers} where phone=%d and source=%d and uid !=%d',$number,1,$uid);
+    while ($record = db_fetch_object($result)) {
+      $uidtodelete = $record->uid;
+    }  
+      if ($uidtodelete != ''){
+      voipusernumber_delete_number($number,$uidtodelete);
+      }
     $voipnumber = new VoipUserNumber($number, $uid,1,1,1);
     drupal_write_record('voipusernumber_numbers', $voipnumber);
     $account->voipnumber[$voipnumber->getNumber()] = $voipnumber;
          }
 }
 
+function voipusernumber_do_user_merge($uid, $uidtomerge) {
+    module_invoke_all('user_merge', $uidtomerge, $uid);
+}
+
+/**
+ * Implement hook_usermerge_merge_users().
+ */
+function voipusernumber_user_merge($uidtomerge, $uid) {
+  // Comment: change the uid to the new one.
+  db_query('UPDATE {comments} SET uid = %d where uid = %d', $uid->uid, $uidtomerge->uid);
+
+  // Node: change uid of node and revisions to the new one.
+  db_query('UPDATE {node} SET uid = %d where uid = %d', $uid->uid, $uidtomerge->uid);
+  db_query('UPDATE {node_revisions} SET uid = %d where uid = %d', $uid->uid, $uidtomerge->uid);
+
+  //Update roles.
+  $merged_roles = $uid->roles + $uidtomerge->roles;
+
+  // First, remove all roles from the user to keep to prevent duplicate key errors.
+  db_query("DELETE FROM {users_roles} WHERE uid = %d", $uid->uid);
+  // Then add them on to the user to keep.
+  foreach (array_keys($merged_roles) as $rid) {
+    if (!in_array($rid, array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID))){
+      db_query('INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)', $uid->uid, $rid);
+    }
+  }
+  // Block the old user.
+  user_block_user_action($uidtomerge);
+}
+
+/**
+ * Implement hook_usermerge_merge_users() on behalf of og.
+ */
+function og_user_merge($uidtomerge, $uid) {
+  // Get groups kept-user is not a member of but blocked-user is.
+  $result = db_query("SELECT nid FROM {og_uid} WHERE uid = %d AND nid NOT IN (SELECT nid FROM {og_uid} WHERE uid = %d)", $uidtomerge->uid, $uid->uid);
+  while ($record = db_fetch_array($result)) {
+    $groups[] = $record['nid'];
+  }
+  if (!empty($groups)) {
+    // Update old user's groups to kept-user if kept-user is not already a member.
+    db_query("UPDATE {og_uid} SET uid = %d WHERE uid = %d AND nid IN (%s)", $uid->uid, $uidtomerge->uid, implode(',', $groups));
+  }
+  // Set blocked-user to inactive.
+  db_query("UPDATE {og_uid} SET is_active = 0 WHERE uid = %d", $uidtomerge->uid);
+}
+
+/**
+ * Implement hook_usermerge_merge_users() on behalf of notifications.
+ */
+function notifications_usermerge_merge_users($uidtomerge, $uid) {
+  // Get blocked-user's notifications.
+  $blocked = array();
+  $result = db_query("SELECT sid FROM {notifications} WHERE uid = %d". $uidtomerge->uid);
+  while ($record = db_fetch_array($result)) {
+    $blocked[] = $record['sid'];
+  }
+  if (!empty($blocked)) {
+    // Delete notification settings.
+    db_query("DELETE FROM {notifications} WHERE uid = %d", $uidtomerge->uid);
+    // Delete fields of blocked-user's notifications settings, they aren't used.
+    db_query("DELETE FROM {notifications_fields} WHERE sid IN (%s)", implode(',', $blocked));
+  }
+  // Delete notifications in the queue for blocked-user.
+  db_query("DELETE FROM {notifications_queue} WHERE uid = %d", $uidtomerge->uid);
+}
 function voipusernumber_call() {
  global $user;
  $val= voipusernumber_validate();
- if($val=FALSE) {
- return;
+ if($val == FALSE) { 
+ return ;
  }
   if (empty($_GET['phone']) || empty($_GET['field_name'])) {
   return;
@@ -414,11 +492,11 @@ function voipusernumber_call() {
      // Dial the call.
   $result = voip_dial($call);
   // Log call with watchdog
-  $type = 'click2call';
-  $message = t("New Click2Call message recorded by $user->name to phone $number. See voipcall nid " . $call->getCid());
+  $type = 'voipusernumber';
+  $message = t("New Call had been recorded by $user->name to phone $number. See voipcall nid " . $call->getCid());
   watchdog($type, $message);
   
-  $rc = drupal_json(array('call_nid' => $call->getCid()));
+  $rc = drupal_json(array('call_nid' =>$call->getCid()));
   return $rc;
   exit();
     }

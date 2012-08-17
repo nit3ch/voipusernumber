@@ -113,7 +113,6 @@ function _voipusernumber_auth_script($num) {
 function _voipusernumber_ask_pin($number,$uid) {
     watchdog('voipusernumber', 'value of @number in script', array('@number' => $number), WATCHDOG_ERROR);
     $form_pin= variable_get('pin_variable_ask','');
-    $text="hi there";
     $script = new VoipScript('voipusernumber_ask_pin');
     $script->addSet('number',$number);
     $script->addSet('uid',$uid);
@@ -121,7 +120,6 @@ function _voipusernumber_ask_pin($number,$uid) {
 // welcome script 
     $script->addLabel('welcome');
     $script->addSay('welcome to voxvox');
-    $script->addSendText($text,'+917827620167','sms','nitesh');
     $script->addGoto('getpin');
     
 // get pin script
@@ -146,5 +144,6 @@ function _voipusernumber_ask_pin($number,$uid) {
     $script->addSet('success','^voipusernumber_writerecord(%number,%uid)');
     $script->addSay('Thank you. Phone number %number is successfully added ');
     $script->addHangup();
+    
     return $script;
 }
